@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fraud Detection</h1>
+            <p>Advanced machine learning for secure transactions</p>
+        </header>
+
+        <div class="content">
+            <!-- Left Section: Upload & Configuration -->
+            <div class="section">
+                <h2>Analyze</h2>
+
+                <div class="upload-area" id="uploadArea">
+                    <p>Drag your CSV file here</p>
+                    <small>or click to browse</small>
+                    <input type="file" id="fileInput" accept=".csv" />
+                </div>
+
+                <div class="controls">
+                    <button class="btn-primary" id="analyzeBtn" disabled>Analyze</button>
+                    <button class="btn-secondary" id="resetBtn">Clear</button>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing data</p>
+                </div>
+
+                <div class="error" id="error"></div>
+                <div class="success" id="success"></div>
+
+                <div class="results" id="results">
+                    <h3>Dataset</h3>
+                    <div class="stats" id="stats"></div>
+                </div>
+            </div>
+
+            <!-- Right Section: Results & Charts -->
+            <div class="section">
+                <h2>Results</h2>
+
+                <div id="resultsPanel" style="display: none;">
+                    <div class="results show">
+                        <h3>Performance</h3>
+                        <div class="metrics" id="metrics"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="confusionChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="predictionChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="placeholderText" style="text-align: center; color: #a0a0a0; padding: 40px 20px;">
+                    <p style="font-size: 1.1em; font-weight: 500;">Run analysis to see results</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="src/app.ts"></script>
+</body>
+</html>
