@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'San Francisco', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #1f2135 100%);
+            min-height: 100vh;
+            padding: 60px 20px;
+            color: #ffffff;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -30%;
+            left: -15%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #1a1f2e 0%, #232b3f 50%, #1f2838 100%);
+            border-radius: 20px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 60px rgba(99, 102, 241, 0.1);
+            overflow: hidden;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a1f2e 0%, #232b3f 50%, #1f2838 100%);
+            padding: 70px 50px;
+            text-align: center;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), rgba(168, 85, 247, 0.3), transparent);
+        }
+
+        header h1 {
+            font-size: 2.8em;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        header p {
+            font-size: 1.05em;
+            background: linear-gradient(90deg, #c7d2fe 0%, #ddd6fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.6;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            padding: 60px;
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .section h2 {
+            color: #ffffff;
+            font-size: 1.65em;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            background: linear-gradient(90deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .upload-area {
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, rgba(30, 30, 50, 0.6) 0%, rgba(40, 35, 60, 0.5) 100%);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .upload-area:hover::before {
+            left: 100%;
+        }
+
+        .upload-area:hover {
+            background: linear-gradient(135deg, rgba(40, 45, 70, 0.8) 0%, rgba(50, 40, 80, 0.7) 100%);
+            border-color: rgba(168, 85, 247, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.25), inset 0 0 25px rgba(168, 85, 247, 0.1);
+        }
+
+        .upload-area.dragover {
+            background: linear-gradient(135deg, rgba(50, 55, 90, 0.9) 0%, rgba(60, 45, 100, 0.8) 100%);
+            border-color: rgba(168, 85, 247, 0.6);
+            box-shadow: inset 0 0 0 3px rgba(99, 102, 241, 0.3), 0 0 25px rgba(168, 85, 247, 0.2);
+            transform: scale(1.02);
+        }
+
+        .upload-area p {
+            color: #ffffff;
+            font-size: 1.15em;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .upload-area small {
+            color: #a5b4fc;
+            display: block;
+            font-size: 0.95em;
+            letter-spacing: -0.005em;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #f472b6 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #818cf8 0%, #d8b4fe 50%, #f8a4d7 100%);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.6), 0 0 30px rgba(168, 85, 247, 0.4), 0 0 15px rgba(244, 114, 182, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            background: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #ec4899 100%);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
+            color: #a5b4fc;
+            border: 2px solid;
+            border-image: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%) 1;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3), 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
+            padding: 32px 24px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(168, 85, 247, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.2), inset 0 0 25px rgba(168, 85, 247, 0.1);
+            border-color: rgba(168, 85, 247, 0.35);
+        }
+
+        .stat-card:hover::after {
+            opacity: 1;
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            color: #a5b4fc;
+            margin-bottom: 14px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 2.4em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+        }
+
+        .results {
+            margin-top: 24px;
+            padding: 28px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border-radius: 12px;
+            display: none;
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h3 {
+            font-size: 1.1em;
+            background: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 18px;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .metric {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .metric:hover {
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2), inset 0 0 15px rgba(168, 85, 247, 0.1);
+            transform: translateY(-3px);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: #a5b4fc;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .metric-value {
+            font-size: 1.9em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 24px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.03) 100%);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            backdrop-filter: blur(8px);
+        }
+
+        .loading {
+            text-align: center;
+            color: #ffffff;
+            display: none;
+            font-size: 1.1em;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top: 3px solid #a78bfa;
+            border-right: 3px solid #60a5fa;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 16px auto;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            padding: 16px 18px;
+            border-radius: 10px;
+            margin-top: 14px;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            display: none;
+            font-size: 0.93em;
+            font-weight: 500;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+            padding: 16px 18px;
+            border-radius: 10px;
+            margin-top: 14px;
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            display: none;
+            font-size: 0.93em;
+            font-weight: 500;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                padding: 40px;
+                gap: 40px;
+            }
+
+            header {
+                padding: 50px 30px;
+            }
+
+            header h1 {
+                font-size: 2.2em;
+                margin-bottom: 12px;
+            }
+
+            header p {
+                font-size: 0.95em;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            body {
+                padding: 40px 16px;
+            }
+
+            .section h2 {
+                font-size: 1.5em;
+            }
+
+            .upload-area {
+                padding: 40px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fraud Detection</h1>
+            <p>Advanced machine learning for secure transactions</p>
+        </header>
+
+        <div class="content">
+            <!-- Left Section: Upload & Configuration -->
+            <div class="section">
+                <h2>Analyze</h2>
+
+                <div class="upload-area" id="uploadArea">
+                    <p>Drag your CSV file here</p>
+                    <small>or click to browse</small>
+                    <input type="file" id="fileInput" accept=".csv" />
+                </div>
+
+                <div class="controls">
+                    <button class="btn-primary" id="analyzeBtn" disabled>Analyze</button>
+                    <button class="btn-secondary" id="resetBtn">Clear</button>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing data</p>
+                </div>
+
+                <div class="error" id="error"></div>
+                <div class="success" id="success"></div>
+
+                <div class="results" id="results">
+                    <h3>Dataset</h3>
+                    <div class="stats" id="stats"></div>
+                </div>
+            </div>
+
+            <!-- Right Section: Results & Charts -->
+            <div class="section">
+                <h2>Results</h2>
+
+                <div id="resultsPanel" style="display: none;">
+                    <div class="results show">
+                        <h3>Performance</h3>
+                        <div class="metrics" id="metrics"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="confusionChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="predictionChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="placeholderText" style="text-align: center; color: #a0a0a0; padding: 40px 20px;">
+                    <p style="font-size: 1.1em; font-weight: 500;">Run analysis to see results</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const successDiv = document.getElementById('success');
+        const resultsDiv = document.getElementById('results');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const placeholderText = document.getElementById('placeholderText');
+
+        let uploadedFile = null;
+        let animationFrameId;
+
+        // File upload handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFileSelect(files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            if (!file.name.endsWith('.csv')) {
+                showError('Please upload a CSV file');
+                return;
+            }
+            uploadedFile = file;
+            uploadArea.innerHTML = `<p style="animation: slideIn 0.4s ease;">✓ File selected: ${file.name}</p>`;
+            analyzeBtn.disabled = false;
+            clearMessages();
+            addPulseAnimation(analyzeBtn);
+        }
+
+        analyzeBtn.addEventListener('click', analyzeData);
+        resetBtn.addEventListener('click', resetForm);
+
+        function clearMessages() {
+            errorDiv.classList.remove('show');
+            successDiv.classList.remove('show');
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            shake(errorDiv);
+        }
+
+        function showSuccess(message) {
+            successDiv.textContent = message;
+            successDiv.classList.add('show');
+            bounce(successDiv);
+        }
+
+        function shake(element) {
+            element.style.animation = 'shake 0.4s ease';
+            setTimeout(() => element.style.animation = '', 400);
+        }
+
+        function bounce(element) {
+            element.style.animation = 'bounce 0.6s ease';
+            setTimeout(() => element.style.animation = '', 600);
+        }
+
+        function addPulseAnimation(button) {
+            button.style.animation = 'pulse 0.6s ease';
+            setTimeout(() => button.style.animation = '', 600);
+        }
+
+        function analyzeData() {
+            if (!uploadedFile) {
+                showError('Please select a file');
+                return;
+            }
+
+            loading.classList.add('show');
+            clearMessages();
+            analyzeBtn.disabled = true;
+
+            // Simulate analysis delay with progress
+            setTimeout(() => {
+                try {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const csv = e.target.result;
+                        const lines = csv.split('\n');
+                        
+                        if (lines.length < 2) {
+                            showError('Invalid CSV file');
+                            loading.classList.remove('show');
+                            analyzeBtn.disabled = false;
+                            return;
+                        }
+
+                        // Parse CSV
+                        const headers = lines[0].split(',');
+                        const data = lines.slice(1).filter(line => line.trim()).map(line => {
+                            const values = line.split(',');
+                            return {
+                                amount: parseFloat(values[1]) || 0,
+                                class: parseInt(values[values.length - 1]) || 0
+                            };
+                        });
+
+                        // Calculate statistics
+                        const fraudCount = data.filter(d => d.class === 1).length;
+                        const validCount = data.filter(d => d.class === 0).length;
+                        const totalCount = data.length;
+                        const fraudPercentage = ((fraudCount / totalCount) * 100).toFixed(2);
+
+                        // Display stats with animation
+                        displayStats(fraudCount, validCount, totalCount, fraudPercentage);
+
+                        // Mock model results
+                        const mockResults = {
+                            isoForest: {
+                                precision: (0.85 + Math.random() * 0.1).toFixed(3),
+                                recall: (0.78 + Math.random() * 0.1).toFixed(3),
+                                f1: (0.81 + Math.random() * 0.1).toFixed(3),
+                                accuracy: (0.96 + Math.random() * 0.03).toFixed(3),
+                                tn: Math.floor(validCount * 0.98),
+                                fp: Math.floor(validCount * 0.02),
+                                fn: Math.floor(fraudCount * 0.2),
+                                tp: Math.floor(fraudCount * 0.8)
+                            },
+                            lof: {
+                                precision: (0.82 + Math.random() * 0.1).toFixed(3),
+                                recall: (0.75 + Math.random() * 0.1).toFixed(3),
+                                f1: (0.78 + Math.random() * 0.1).toFixed(3),
+                                accuracy: (0.94 + Math.random() * 0.03).toFixed(3),
+                                tn: Math.floor(validCount * 0.97),
+                                fp: Math.floor(validCount * 0.03),
+                                fn: Math.floor(fraudCount * 0.25),
+                                tp: Math.floor(fraudCount * 0.75)
+                            }
+                        };
+
+                        displayResults(mockResults);
+                        showSuccess('✓ Analysis completed successfully');
+                        loading.classList.remove('show');
+                        analyzeBtn.disabled = false;
+                    };
+                    reader.readAsText(uploadedFile);
+                } catch (error) {
+                    showError('Error processing file: ' + error.message);
+                    loading.classList.remove('show');
+                    analyzeBtn.disabled = false;
+                }
+            }, 1500);
+        }
+
+        function displayStats(fraudCount, validCount, totalCount, fraudPercentage) {
+            const stats = document.getElementById('stats');
+            stats.innerHTML = `
+                <div class="stat-card" style="animation: slideIn 0.5s ease;">
+                    <h3>Total Transactions</h3>
+                    <div class="value" style="animation: countUp 1s ease;">${totalCount.toLocaleString()}</div>
+                </div>
+                <div class="stat-card" style="animation: slideIn 0.6s ease;">
+                    <h3>Fraudulent</h3>
+                    <div class="value" style="animation: countUp 1s ease 0.2s both;">${fraudCount.toLocaleString()}</div>
+                </div>
+                <div class="stat-card" style="animation: slideIn 0.7s ease;">
+                    <h3>Valid</h3>
+                    <div class="value" style="animation: countUp 1s ease 0.4s both;">${validCount.toLocaleString()}</div>
+                </div>
+                <div class="stat-card" style="animation: slideIn 0.8s ease;">
+                    <h3>Fraud Rate</h3>
+                    <div class="value" style="animation: countUp 1s ease 0.6s both;">${fraudPercentage}%</div>
+                </div>
+            `;
+            resultsDiv.classList.add('show');
+        }
+
+        function displayResults(results) {
+            placeholderText.style.display = 'none';
+            resultsPanel.style.display = 'block';
+
+            // Display metrics
+            const metrics = document.getElementById('metrics');
+            metrics.innerHTML = `
+                <div class="metric" style="animation: slideIn 0.5s ease;">
+                    <div class="metric-label">Isolation Forest - Accuracy</div>
+                    <div class="metric-value">${(results.isoForest.accuracy * 100).toFixed(1)}%</div>
+                </div>
+                <div class="metric" style="animation: slideIn 0.6s ease;">
+                    <div class="metric-label">Isolation Forest - Precision</div>
+                    <div class="metric-value">${(results.isoForest.precision * 100).toFixed(1)}%</div>
+                </div>
+                <div class="metric" style="animation: slideIn 0.7s ease;">
+                    <div class="metric-label">LOF - Accuracy</div>
+                    <div class="metric-value">${(results.lof.accuracy * 100).toFixed(1)}%</div>
+                </div>
+                <div class="metric" style="animation: slideIn 0.8s ease;">
+                    <div class="metric-label">LOF - Precision</div>
+                    <div class="metric-value">${(results.lof.precision * 100).toFixed(1)}%</div>
+                </div>
+            `;
+
+            // Confusion matrix chart
+            drawConfusionMatrix(results.isoForest);
+
+            // Prediction distribution chart
+            drawPredictionChart(results);
+        }
+
+        function drawConfusionMatrix(data) {
+            const ctx = document.getElementById('confusionChart').getContext('2d');
+            
+            if (window.confusionChart instanceof Chart) {
+                window.confusionChart.destroy();
+            }
+
+            Chart.register(ChartDataLabels);
+
+            window.confusionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['True Negative', 'False Positive', 'False Negative', 'True Positive'],
+                    datasets: [{
+                        label: 'Confusion Matrix (Isolation Forest)',
+                        data: [data.tn, data.fp, data.fn, data.tp],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.85)',
+                            'rgba(96, 165, 250, 0.85)',
+                            'rgba(34, 211, 238, 0.85)',
+                            'rgba(6, 182, 212, 0.85)'
+                        ],
+                        borderColor: [
+                            '#3b82f6',
+                            '#60a5fa',
+                            '#22d3ee',
+                            '#06b6d4'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        hoverBackgroundColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(96, 165, 250, 1)',
+                            'rgba(34, 211, 238, 1)',
+                            'rgba(6, 182, 212, 1)'
+                        ],
+                        hoverBorderWidth: 3,
+                        transition: {
+                            duration: 400
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    size: 11
+                                },
+                                color: '#93c5fd'
+                            },
+                            grid: {
+                                color: 'rgba(59, 130, 246, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 11
+                                },
+                                color: '#93c5fd'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        datalabels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            },
+                            formatter: function(value) {
+                                return value.toLocaleString();
+                            },
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 8
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: 600
+                                },
+                                color: '#93c5fd'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 25, 0.95)',
+                            padding: 12,
+                            titleFont: { size: 13, weight: 600 },
+                            bodyFont: { size: 12 },
+                            displayColors: true,
+                            borderColor: 'rgba(59, 130, 246, 0.5)',
+                            borderWidth: 2,
+                            titleColor: '#93c5fd',
+                            bodyColor: '#e0e7ff'
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawPredictionChart(results) {
+            const ctx = document.getElementById('predictionChart').getContext('2d');
+            
+            if (window.predictionChart instanceof Chart) {
+                window.predictionChart.destroy();
+            }
+
+            Chart.register(ChartDataLabels);
+
+            window.predictionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Isolation Forest', 'Local Outlier Factor'],
+                    datasets: [{
+                        data: [results.isoForest.accuracy * 100, results.lof.accuracy * 100],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.85)',
+                            'rgba(34, 211, 238, 0.85)'
+                        ],
+                        borderColor: [
+                            'rgba(96, 165, 250, 0.9)',
+                            'rgba(6, 182, 212, 0.9)'
+                        ],
+                        borderWidth: 3,
+                        hoverBackgroundColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(34, 211, 238, 1)'
+                        ],
+                        hoverBorderColor: [
+                            'rgba(96, 165, 250, 1)',
+                            'rgba(6, 182, 212, 1)'
+                        ],
+                        hoverBorderWidth: 5,
+                        transition: {
+                            duration: 400
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    },
+                    plugins: {
+                        datalabels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: 'bold',
+                                size: 16
+                            },
+                            formatter: function(value) {
+                                return value.toFixed(1) + '%';
+                            },
+                            anchor: 'center',
+                            align: 'center'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: 600
+                                },
+                                color: '#93c5fd'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 25, 0.95)',
+                            padding: 12,
+                            titleFont: { size: 13, weight: 600 },
+                            bodyFont: { size: 12 },
+                            displayColors: true,
+                            borderColor: 'rgba(59, 130, 246, 0.5)',
+                            borderWidth: 2,
+                            titleColor: '#93c5fd',
+                            bodyColor: '#e0e7ff',
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetForm() {
+            uploadedFile = null;
+            fileInput.value = '';
+            uploadArea.innerHTML = '<p>Drag your CSV file here</p><small>or click to browse</small>';
+            analyzeBtn.disabled = true;
+            resultsDiv.classList.remove('show');
+            resultsPanel.style.display = 'none';
+            placeholderText.style.display = 'block';
+            clearMessages();
+            
+            if (window.confusionChart instanceof Chart) {
+                window.confusionChart.destroy();
+            }
+            if (window.predictionChart instanceof Chart) {
+                window.predictionChart.destroy();
+            }
+        }
+    </script>
+    <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes countUp {
+            from {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 0 0 8px rgba(0, 0, 0, 0); }
+        }
+    </style>
+</body>
+</html>
